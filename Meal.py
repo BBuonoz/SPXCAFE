@@ -2,6 +2,7 @@ from SPXCafe import SPXCafe
 import Course
 
 class Meal(SPXCafe):
+    ''' Meal Class '''
 
     def __init__(self,mealId=None,mealName=None,mealPrice=None,courseId=None,course=None):
 

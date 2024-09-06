@@ -2,7 +2,7 @@ import Meal
 from SPXCafe import SPXCafe
 
 class Course(SPXCafe):
-    '''Course Class - holds information about a Menu Course.       '''
+    '''Course Class - holds information about a Menu Course. '''
 
     def __init__(self, courseId=None, courseName=None,meals=None):
         '''Constructor Method for a Course'''
