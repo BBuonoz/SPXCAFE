@@ -23,33 +23,48 @@ class VietnamBot:
 
     def welcomeCustomer(self):
         print("Welcome to VietnamBot, your Vietnamese food online ordering service!")
-        #self.avatar.say("Welcome to VietnamBot, your Vietnamese food online ordering service!")
+        # self.avatar.say("Welcome to VietnamBot, your Vietnamese food online ordering service!")
 
     def identifyCustomer(self):
-        username = input("\nWhat is your username? ")
-        db = Database("SPXCafe.db")
-        customerData = db.dbGetData(f"SELECT * FROM customer WHERE userName='{username}'")
-        if customerData:
-            self.customer = Customer(userName=username)
-            print(f"Welcome back, {self.customer.userName}!")
-            # self.avatar.say(f"Welcome back, {self.customer.userName}!")
-        else:
-            print("Sorry, we couldn't find a customer with that username.")
-            # self.avatar.say("Sorry, we couldn't find a customer with that username.")
-            print("Let's create a new account for you!")
-            # self.avatar.say("Let's create a new account for you!")
-            firstName = input("What is your first name? ")
-            lastName = input("What is your last name? ")
-            newUsername = input(f"Would you like to use '{firstName}{lastName}' as your username? (yes/no) ")
-            if newUsername.lower() == "yes":
-                newUsername = f"{firstName}{lastName}"
+        while True:
+            print("\nAre you an existing customer or would you like to create a new account?")
+            user_input = input("Enter your choice: ")
+
+            options = ["existing customer", "create new account"]
+            closest_match = process.extractOne(user_input.lower(), options, scorer=fuzz.token_sort_ratio)
+
+            if closest_match and closest_match[1] > 20:
+                if closest_match[0] == "existing customer":
+                    username = input("\nWhat is your username? ")
+                    db = Database("SPXCafe.db")
+                    customerData = db.dbGetData(f"SELECT * FROM customer WHERE userName='{username}'")
+                    if customerData:
+                        self.customer = Customer(userName=username)
+                        print(f"Welcome back, {self.customer.userName}!")
+                        # self.avatar.say(f"Welcome back, {self.customer.userName}!")
+                        break
+                    else:
+                        print("Sorry, we couldn't find a customer with that username.")
+                        # self.avatar.say("Sorry, we couldn't find a customer with that username.")
+                elif closest_match[0] == "create new account":
+                    print("Let's create a new account for you!")
+                    # self.avatar.say("Let's create a new account for you!")
+                    firstName = input("What is your first name? ")
+                    lastName = input("What is your last name? ")
+                    newUsername = input(f"Would you like to use '{firstName}{lastName}' as your username? (yes/no) ")
+                    if newUsername.lower() == "yes":
+                        newUsername = f"{firstName}{lastName}"
+                    else:
+                        newUsername = input("Enter a new username: ")
+                    newCustomer = Customer(userName=newUsername, firstName=firstName, lastName=lastName)
+                    newCustomer.save()
+                    self.customer = newCustomer
+                    print(f"Welcome, {self.customer.userName}! Your account has been created.")
+                    # self.avatar.say(f"Welcome, {self.customer.userName}! Your account has been created.")
+                    break
             else:
-                newUsername = input("Enter a new username: ")
-            newCustomer = Customer(userName=newUsername, firstName=firstName, lastName=lastName)
-            newCustomer.save()
-            self.customer = newCustomer
-            print(f"Welcome, {self.customer.userName}! Your account has been created.")
-            # self.avatar.say(f"Welcome, {self.customer.userName}! Your account has been created.")
+                print("Invalid choice. Please try again.")
+                # self.avatar.say("Invalid choice. Please try again.")
 
     def showMenu(self):
         print("\nOur menu consists of:")
@@ -168,12 +183,12 @@ class VietnamBot:
                 meal_price = Meal.findMeal(meal_name)[0].getMealPrice()
                 subtotal = quantity * meal_price
                 total += subtotal
-                print(f"{'':^10}{'':^10}{meal_name:<30}{quantity:^10}{meal_price:^10.2f}{subtotal:^10.2f}")
+                print(f"{'':^10}{'':^10}{meal_name:<30}{quantity:^10}${meal_price:^10.2f}${subtotal:^10.2f}")
                 avatar_message += f"{quantity} {meal_name} at ${meal_price:.2f} each, "
             avatar_message = avatar_message[:-2]  # Remove the trailing comma and space
             avatar_message += f" with a total of ${total:.2f}."
             print("-" * 80)
-            print(f"{'':^70}{'Total:':^10}{total:^10.2f}")
+            print(f"{'':^70}{'Total:':^10}${total:^10.2f}")
             print("-" * 80)
             self.avatar.say(avatar_message)
         else:
@@ -202,20 +217,19 @@ class VietnamBot:
                 print("\nWhat would you like to do?")
                 print("1. Remove an item")
                 print("2. Update quantities")
-                print("3. Continue to checkout")
+                print("3. Exit back to main options")
                 user_input = input("Enter your choice: ")
                 
                 threshold = 30
                 remove_similarity = fuzz.ratio(user_input.lower(), "remove")
                 update_similarity = fuzz.ratio(user_input.lower(), "update")
-                checkout_similarity = fuzz.ratio(user_input.lower(), "checkout")
-                if remove_similarity > update_similarity and remove_similarity > checkout_similarity and remove_similarity > threshold:
+                exit_similarity = fuzz.ratio(user_input.lower(), "exit")
+                if remove_similarity > update_similarity and remove_similarity > exit_similarity and remove_similarity > threshold:
                     self.removeBasketItem()
-                elif update_similarity > remove_similarity and update_similarity > checkout_similarity and update_similarity > threshold:
+                elif update_similarity > remove_similarity and update_similarity > exit_similarity and update_similarity > threshold:
                     self.updateBasketQuantities()
-                elif checkout_similarity > remove_similarity and checkout_similarity > update_similarity and checkout_similarity > threshold:
-                    self.checkout()
-                    break
+                elif exit_similarity > remove_similarity and exit_similarity > update_similarity and exit_similarity > threshold:
+                    return
                 else:
                     print("Invalid choice. Please try again.")
                     # self.avatar.say("Invalid choice. Please try again.")
@@ -307,15 +321,20 @@ class VietnamBot:
         self.viewBasket()
 
     def checkout(self):
+        if self.basket.getBasketCount() == 0:
+            print("Your basket is empty. Please add some items to checkout.")
+            self.avatar.say("Your basket is empty. Please add some items to checkout.")
+            return
+
         order = Order(customer=self.customer)
         order.save()
-        
+
         for basket_item in self.basket.getBasket():
             order_item = OrderItem(order=order, meal=basket_item.getMeal(), quantity=basket_item.getQuantity())
             order_item.save()
-        
+
         print("\nYour order has been saved successfully!")
-        # self.avatar.say("Your order has been saved successfully!")
+        self.avatar.say("Your order has been saved successfully!")
         self.basket = Basket()
         return
 
@@ -328,6 +347,7 @@ class VietnamBot:
             "Order food": self.takeOrder,
             "View previous orders": self.viewOrder,
             "View basket": self.viewBasket,
+            "Checkout": self.checkout,
             "Exit": self.exitBot
         }
 
@@ -345,7 +365,7 @@ class VietnamBot:
             else:
                 print("Invalid choice. Please try again.")
                 self.avatar.say("Invalid choice. Please try again.")
-
+                
     def exitBot(self):
         print("Thank you for using VietnamBot!")
         self.avatar.say("Thank you for using VietnamBot!")
