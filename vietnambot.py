@@ -22,13 +22,13 @@ class VietnamBot:
         self.basket = Basket() 
 
     def welcomeCustomer(self):
-        print("Welcome to VietnamBot, your Vietnamese food online ordering service!")
-        # self.avatar.say("Welcome to VietnamBot, your Vietnamese food online ordering service!")
+        # print("Welcome to VietnamBot, your Vietnamese food online ordering service!")
+        self.avatar.speak("Welcome to VietnamBot, your Vietnamese food online ordering service!")
 
     def identifyCustomer(self):
         while True:
-            print("\nAre you an existing customer or would you like to create a new account?")
-            user_input = input("Enter your choice: ")
+            self.avatar.speak("\nAre you an existing customer or would you like to create a new account?")
+            user_input = self.avatar.listen("Say your choice: ")
 
             options = ["existing customer", "create new account"]
             closest_match = process.extractOne(user_input.lower(), options, scorer=fuzz.token_sort_ratio)
@@ -40,12 +40,12 @@ class VietnamBot:
                     customerData = db.dbGetData(f"SELECT * FROM customer WHERE userName='{username}'")
                     if customerData:
                         self.customer = Customer(userName=username)
-                        print(f"Welcome back, {self.customer.userName}!")
-                        # self.avatar.say(f"Welcome back, {self.customer.userName}!")
+                        # print(f"Welcome back, {self.customer.userName}!")
+                        self.avatar.say(f"Welcome back, {self.customer.userName}!")
                         break
                     else:
-                        print("Sorry, we couldn't find a customer with that username.")
-                        # self.avatar.say("Sorry, we couldn't find a customer with that username.")
+                        # print("Sorry, we couldn't find a customer with that username.")
+                        self.avatar.say("Sorry, we couldn't find a customer with that username.")
                 elif closest_match[0] == "create new account":
                     print("Let's create a new account for you!")
                     # self.avatar.say("Let's create a new account for you!")
@@ -59,35 +59,35 @@ class VietnamBot:
                     newCustomer = Customer(userName=newUsername, firstName=firstName, lastName=lastName)
                     newCustomer.save()
                     self.customer = newCustomer
-                    print(f"Welcome, {self.customer.userName}! Your account has been created.")
-                    # self.avatar.say(f"Welcome, {self.customer.userName}! Your account has been created.")
+                    # print(f"Welcome, {self.customer.userName}! Your account has been created.")
+                    self.avatar.say(f"Welcome, {self.customer.userName}! Your account has been created.")
                     break
             else:
-                print("Invalid choice. Please try again.")
-                # self.avatar.say("Invalid choice. Please try again.")
+                # print("Invalid choice. Please try again.")
+                self.avatar.say("Invalid choice. Please try again.")
 
     def showMenu(self):
         print("\nOur menu consists of:")
         self.menu.showCourses()
-        # self.avatar.say("Our menu consists of starters, main course, and desserts. Would you like to hear more about a specific course?")
-        user_input = input("Enter your choice: ")
+        self.avatar.speak("Our menu consists of starters, main course, and desserts. Would you like to hear more about a specific course?")
+        user_input = self.avatar.listen("say your choice: ")
         
         courses = self.menu.getCourses()
         closest_match = process.extractOne(user_input, courses, scorer=fuzz.token_sort_ratio)
         
         if closest_match and closest_match[1] > 50:
             course_name = closest_match[0]
-            print(f"Here are our {course_name}:")
+            self.avatar.speak(f"Here are our {course_name}:")
             self.menu.showMealsForCourse(course_name)
         else:
-            print("Sorry, I didn't quite understand that. Please try again.")
-            # self.avatar.say("Sorry, I didn't quite understand that. Please try again.")
+            # print("Sorry, I didn't quite understand that. Please try again.")
+            self.avatar.say("Sorry, I didn't quite understand that. Please try again.")
 
 #======================================================================================================================================================
 
     def takeOrder(self):
-        print("\nWhat meal would you like to order? Please note that a minimum of 3 dishes must be ordered to proceed to checkout.")
-        # self.avatar.say("What meal would you like to order? Please note that a minimum of 3 dishes must be ordered to proceed to checkout.")
+        # print("\nWhat meal would you like to order? Please note that a minimum of 3 dishes must be ordered to proceed to checkout.")
+        self.avatar.speak("What meal would you like to order? Please note that a minimum of 3 dishes must be ordered to proceed to checkout.")
         
         while True:
             user_input = input("Enter your choice, type 'menu' to view menu again, or type 'exit' to abandon order: ")
@@ -109,12 +109,12 @@ class VietnamBot:
             
             if meals:
                 meal = meals[0]  # Use the first matching meal
-                print(f"Great choice! You've selected {meal.getMealName()}.")
-                # self.avatar.say(f"Great choice! You've selected {meal.getMealName()}.")
+                # print(f"Great choice! You've selected {meal.getMealName()}.")
+                self.avatar.speak(f"Great choice! You've selected {meal.getMealName()}.")
                 
                 meal_price = meal.getMealPrice()
-                print(f"The price of {meal.getMealName()} is ${meal_price:.2f}.")
-                # self.avatar.say(f"The price of {meal.getMealName()} is ${meal_price:.2f}.")
+                # print(f"The price of {meal.getMealName()} is ${meal_price:.2f}.")
+                self.avatar.speak(f"The price of {meal.getMealName()} is ${meal_price:.2f}.")
                 
                 quantity = int(input("How many would you like to order? "))
                 
@@ -123,22 +123,22 @@ class VietnamBot:
                     if basket_item.getMeal() == meal:
                         # If the meal exists, increment the quantity
                         basket_item.setQuantity(basket_item.getQuantity() + quantity)
-                        print(f"Your order of {quantity} {meal.getMealName()}(s) has been added to your basket.")
-                        # self.avatar.say(f"Your order of {quantity} {meal.getMealName()}(s) has been added to your basket.")
+                        # print(f"Your order of {quantity} {meal.getMealName()}(s) has been added to your basket.")
+                        self.avatar.speak(f"Your order of {quantity} {meal.getMealName()}(s) has been added to your basket.")
                         break
                 else:
                     # If the meal doesn't exist, add a new BasketItem
                     basket_item = BasketItem(meal, quantity)
                     self.basket.addItem(basket_item)
-                    print(f"Your order of {quantity} {meal.getMealName()}(s) has been added to your basket.")
-                    # self.avatar.say(f"Your order of {quantity} {meal.getMealName()}(s) has been added to your basket.")
+                    # print(f"Your order of {quantity} {meal.getMealName()}(s) has been added to your basket.")
+                    self.avatar.speak(f"Your order of {quantity} {meal.getMealName()}(s) has been added to your basket.")
                 
                 self.basket.displayBasket()
                 
                 if self.basket.getBasketCount() >= self.basket.getMinOrderLevel():
                     while True:
-                        print("\nYou have met the minimum order requirement. What would you like to do?")
-                        user_input = input("Continue or finish ordering: ")
+                        self.avatar.speak("\nYou have met the minimum order requirement. What would you like to do?")
+                        user_input = self.avatar.listen("Continue or finish ordering: ")
                         
                         options = ["Continue ordering", "Finish ordering"]
                         closest_match = process.extractOne(user_input, options, scorer=fuzz.token_sort_ratio)
@@ -150,11 +150,11 @@ class VietnamBot:
                             elif closest_match_option == "Finish ordering":
                                 return
                         else:
-                            print("Invalid choice. Please try again.")
-                            self.avatar.say("Invalid choice. Please try again.")
+                            # print("Invalid choice. Please try again.")
+                            self.avatar.speak("Invalid choice. Please try again.")
             else:
-                print("Sorry, I didn't quite understand that. Please try again.")
-                self.avatar.say("Sorry, I didn't quite understand that. Please try again.")
+                # print("Sorry, I didn't quite understand that. Please try again.")
+                self.avatar.speak("Sorry, I didn't quite understand that. Please try again.")
 
 #======================================================================================================================================================
 
@@ -192,8 +192,8 @@ class VietnamBot:
             print("-" * 80)
             self.avatar.say(avatar_message)
         else:
-            print("You have no previous orders.")
-            self.avatar.say("You have no previous orders.")
+            # print("You have no previous orders.")
+            self.avatar.speak("You have no previous orders.")
 
                     
     def viewBasket(self):
@@ -322,8 +322,8 @@ class VietnamBot:
 
     def checkout(self):
         if self.basket.getBasketCount() == 0:
-            print("Your basket is empty. Please add some items to checkout.")
-            self.avatar.say("Your basket is empty. Please add some items to checkout.")
+            # print("Your basket is empty. Please add some items to checkout.")
+            self.avatar.speak("Your basket is empty. Please add some items to checkout.")
             return
 
         order = Order(customer=self.customer)
@@ -333,8 +333,8 @@ class VietnamBot:
             order_item = OrderItem(order=order, meal=basket_item.getMeal(), quantity=basket_item.getQuantity())
             order_item.save()
 
-        print("\nYour order has been saved successfully!")
-        self.avatar.say("Your order has been saved successfully!")
+        # print("\nYour order has been saved successfully!")
+        self.avatar.speak("\nYour order has been saved successfully!")
         self.basket = Basket()
         return
 
@@ -352,10 +352,10 @@ class VietnamBot:
         }
 
         while True:
-            print("\nWhat would you like to do?")
+            self.avatar.speak("\nWhat would you like to do?")
             for i, option in enumerate(options.keys()):
                 print(f"{i+1}. {option}")
-            user_input = input("Enter your choice: ")
+            user_input = self.avatar.listen("Say your choice: ")
 
             closest_match = process.extractOne(user_input, options.keys(), scorer=fuzz.token_sort_ratio)
 
@@ -363,12 +363,12 @@ class VietnamBot:
                 closest_match_option = closest_match[0]
                 options[closest_match_option]()
             else:
-                print("Invalid choice. Please try again.")
-                self.avatar.say("Invalid choice. Please try again.")
+                # print("Invalid choice. Please try again.")
+                self.avatar.speak("Invalid choice. Please try again.")
                 
     def exitBot(self):
-        print("Thank you for using VietnamBot!")
-        self.avatar.say("Thank you for using VietnamBot!")
+        # print("Thank you for using VietnamBot!")
+        self.avatar.speak("Thank you for using VietnamBot!")
         exit()
 
 if __name__ == "__main__":

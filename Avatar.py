@@ -44,6 +44,11 @@ class Avatar:
         self.__engine.say(words, self.name)
         self.__engine.runAndWait()
 
+    def speak(self, words):
+        print(words)
+        self.__engine.say(words, self.name)
+        self.__engine.runAndWait()
+
     def listen(self, prompt="I am listening, please speak:",useSR=True):
         words = ""
         if not useSR:

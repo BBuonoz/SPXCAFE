@@ -124,7 +124,7 @@ class Customer(SPXCafe):
                     '''
                 # print(sql)
                 self.customerId = self.dbPutData(sql)
-                print(f"Customer saved: {self.getUserName()} ({self.getCustomerId()})")
+                # print(f"Customer saved: {self.getUserName()} ({self.getCustomerId()})")
         except Exception as e:
             raise  # re-raise the exception to propagate the error
         
